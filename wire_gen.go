@@ -22,6 +22,6 @@ func BuildDependency() *web.GinServer {
 	authService := service.NewAuthService(db)
 	authHandler := web.NewAuthHandler(authService, handler, logger)
 	proxyHandler := ioc.InitProxyHandler(logger)
-	ginServer := ioc.InitGinServer(logger, handler, authHandler, proxyHandler)
+	ginServer := ioc.InitGinServer(logger, handler, db, authHandler, proxyHandler)
 	return ginServer
 }

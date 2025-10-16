@@ -31,9 +31,14 @@ gin:
     - "X-Refresh-Token"
   AllowCredentials: false
   max_age: 3600 # 单位: 秒
-  pass_path_method_pairs:
+  login_check_pass_pairs:
     - path: "/auth/login"
       method: "POST"
+  admin_check_pairs:
+    - path: "/api"
+      method: "ANY"
+      cmd:
+        - "?"
   addr: ":8080"
 
 redis:

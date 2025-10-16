@@ -23,7 +23,8 @@ type GinConfig struct {
 	ExposeHeaders       []string                    `yaml:"expose_headers"`         // 暴露的响应头，* 表示所有响应头
 	AllowCredentials    bool                        `yaml:"allow_credentials"`      // 是否允许携带凭证（如 Cookies）
 	MaxAge              int64                       `yaml:"max_age"`                // 预检请求的缓存时间（单位: 秒）
-	PassPathMethodPairs []middleware.PathMethodPair `yaml:"pass_path_method_pairs"` // 绕过 jwt 校验的路径
+	LoginCheckPassPairs []middleware.PathMethodPair `yaml:"login_check_pass_pairs"` // 绕过登录校验路径
+	AdminCheckPairs     []middleware.PathMethodPair `yaml:"admin_check_pairs"`      // 管理员校验路径
 	Addr                string                      `yaml:"addr"`                   // 服务地址
 }
 
