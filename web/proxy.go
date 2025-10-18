@@ -56,9 +56,9 @@ type ProxyHandler struct {
 
 var _ Handler = (*ProxyHandler)(nil)
 
-func NewProxyHandler(healthCheckInterval, healthCheckTimeout time.Duration, log loggerv2.Logger) *ProxyHandler {
+func NewProxyHandler(healthCheckInterval, healthCheckTimeout time.Duration, log loggerv2.Logger, services map[string]*ServiceConfig) *ProxyHandler {
 	handler := &ProxyHandler{
-		services:            make(map[string]*ServiceConfig),
+		services:            services,
 		healthCheckInterval: healthCheckInterval,
 		healthCheckTimeout:  healthCheckTimeout,
 		log:                 log,

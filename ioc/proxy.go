@@ -29,8 +29,28 @@ func InitProxyHandler(l loggerv2.Logger) *web.ProxyHandler {
 		l.Warn("health_check_timeout not configured or invalid, using default value: 5s")
 	}
 
+	services := make(map[string]*web.ServiceConfig, len(cfg.Services))
+	for _, cfgSvc := range cfg.Services {
+		svc := &web.ServiceConfig{
+			ServiceName:  cfgSvc.ServiceName,
+			HealthCheck:  cfgSvc.HealthCheck,
+			LoadBalancer: web.LoadBalancerType(cfgSvc.LoadBalancer),
+		}
+		svc.Instances = make([]*web.ServiceInstance, len(cfgSvc.Instances))
+		for idx, cfgInst := range cfgSvc.Instances {
+			svc.Instances[idx] = &web.ServiceInstance{
+				URL:     cfgInst.URL,
+				Weight:  cfgInst.Weight,
+				Healthy: cfgInst.Healthy,
+			}
+		}
+		services[cfgSvc.ServiceName] = svc
+	}
+
 	return web.NewProxyHandler(
 		time.Duration(healthCheckInterval)*time.Second,
 		time.Duration(healthCheckTimeout)*time.Second,
-		l)
+		l,
+		services,
+	)
 }

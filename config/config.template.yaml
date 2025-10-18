@@ -56,3 +56,11 @@ jwt:
 proxy:
   healthCheckInterval: 60 # 单位: 秒
   healthCheckTimeout: 5 # 单位: 秒
+  services:
+    - serviceName: "online_judge_controller"
+      instances:
+        - url: "http://localhost:8081"
+          weight: 1
+          healthy: true
+      healthCheck: "/health"
+      loadBalancer: "roundrobin"

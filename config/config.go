@@ -67,9 +67,23 @@ func (JWTConfig) Key() string {
 	return "jwt"
 }
 
+type ServiceInstanceConfig struct {
+	URL     string `yaml:"url"`     // 服务实例 URL
+	Weight  int    `yaml:"weight"`  // 服务实例权重
+	Healthy bool   `yaml:"healthy"` // 服务实例是否健康
+}
+
+type ServiceConfig struct {
+	ServiceName  string                  `yaml:"serviceName"`  // 服务名称
+	Instances    []ServiceInstanceConfig `yaml:"instances"`    // 服务实例配置
+	HealthCheck  string                  `yaml:"healthCheck"`  // 健康检查路径
+	LoadBalancer string                  `yaml:"loadBalancer"` // 负载均衡策略
+}
+
 type ProxyConfig struct {
-	HealthCheckInterval int `yaml:"healthCheckInterval"` // 健康检查间隔（单位: 秒）
-	HealthCheckTimeout  int `yaml:"healthCheckTimeout"`  // 健康检查超时时间（单位: 秒）
+	HealthCheckInterval int             `yaml:"healthCheckInterval"` // 健康检查间隔（单位: 秒）
+	HealthCheckTimeout  int             `yaml:"healthCheckTimeout"`  // 健康检查超时时间（单位: 秒）
+	Services            []ServiceConfig `yaml:"services"`            // 服务配置
 }
 
 func (ProxyConfig) Key() string {
