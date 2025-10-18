@@ -7,9 +7,9 @@
 package main
 
 import (
-	"github.com/to404hanga/onlinue_judge_gateway/ioc"
-	"github.com/to404hanga/onlinue_judge_gateway/service"
-	"github.com/to404hanga/onlinue_judge_gateway/web"
+	"github.com/to404hanga/online_judge_gateway/ioc"
+	"github.com/to404hanga/online_judge_gateway/service"
+	"github.com/to404hanga/online_judge_gateway/web"
 )
 
 // Injectors from wire.go:

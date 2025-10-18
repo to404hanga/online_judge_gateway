@@ -13,9 +13,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	constants "github.com/to404hanga/onlinue_judge_gateway/constant"
-	"github.com/to404hanga/onlinue_judge_gateway/web/jwt"
-	"github.com/to404hanga/onlinue_judge_gateway/web/middleware"
+	constants "github.com/to404hanga/online_judge_gateway/constant"
+	"github.com/to404hanga/online_judge_gateway/web/jwt"
+	"github.com/to404hanga/online_judge_gateway/web/middleware"
 	"github.com/to404hanga/pkg404/logger"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 )

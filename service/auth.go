@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	ojmodel "github.com/to404hanga/online_judge_common/model"
-	"github.com/to404hanga/onlinue_judge_gateway/domain"
+	"github.com/to404hanga/online_judge_gateway/domain"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

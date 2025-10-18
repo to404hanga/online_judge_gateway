@@ -6,8 +6,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
-	"github.com/to404hanga/onlinue_judge_gateway/config"
-	"github.com/to404hanga/onlinue_judge_gateway/web/jwt"
+	"github.com/to404hanga/online_judge_gateway/config"
+	"github.com/to404hanga/online_judge_gateway/web/jwt"
 )
 
 func InitJWTHandler(rdb redis.Cmdable) jwt.Handler {

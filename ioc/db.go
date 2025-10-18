@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
-	"github.com/to404hanga/onlinue_judge_gateway/config"
+	"github.com/to404hanga/online_judge_gateway/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"

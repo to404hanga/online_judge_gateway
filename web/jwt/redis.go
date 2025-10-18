@@ -11,7 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	constants "github.com/to404hanga/onlinue_judge_gateway/constant"
+	constants "github.com/to404hanga/online_judge_gateway/constant"
 )
 
 var ssidKey = "users:ssid:%s"
