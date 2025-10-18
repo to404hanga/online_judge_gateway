@@ -65,17 +65,23 @@ func (h *RedisJWTHandler) SetLoginToken(ctx *gin.Context, UserId uint64) error {
 }
 
 func (h *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
+	// 优先从Authorization Header提取token
 	authCode := ctx.GetHeader("Authorization")
-	if authCode == "" {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
-		return authCode
+	if authCode != "" {
+		segs := strings.Split(authCode, " ")
+		if len(segs) == 2 && segs[0] == "Bearer" {
+			return segs[1]
+		}
 	}
-	segs := strings.Split(authCode, " ")
-	if len(segs) != 2 {
+
+	// 如果Header中没有，尝试从Cookie中提取
+	tokenFromCookie, err := ctx.Cookie(constants.HeaderLoginTokenKey)
+	if err != nil || tokenFromCookie == "" {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return ""
 	}
-	return segs[1]
+
+	return tokenFromCookie
 }
 
 func (h *RedisJWTHandler) SetJWTToken(ctx *gin.Context, UserId uint64, ssid string) error {
@@ -92,7 +98,21 @@ func (h *RedisJWTHandler) SetJWTToken(ctx *gin.Context, UserId uint64, ssid stri
 	if err != nil {
 		return err
 	}
+
+	// 设置响应头
 	ctx.Header(constants.HeaderLoginTokenKey, tokenStr)
+
+	// 同时设置Cookie，支持浏览器自动携带
+	ctx.SetCookie(
+		constants.HeaderLoginTokenKey,  // cookie名称
+		tokenStr,                       // cookie 值
+		int(h.jwtExpiration.Seconds()), // 过期时间（秒）
+		"/",                            // 路径
+		"",                             // 域名
+		false,                          // secure (HTTPS)
+		true,                           // httpOnly
+	)
+
 	return nil
 }
 

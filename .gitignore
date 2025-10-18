@@ -29,6 +29,8 @@ coverage.html
 # 配置文件（包含敏感信息）
 *.yaml
 !*.template.yaml
+!docker-compose*.yaml
+
 .env
 !.env.template
 
@@ -73,7 +75,6 @@ temp/
 # 调试文件
 debug
 debug.test
-test/
 
 # 本地开发文件
 local/

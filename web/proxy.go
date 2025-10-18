@@ -222,10 +222,13 @@ func (h *ProxyHandler) selectInstance(config *ServiceConfig) *ServiceInstance {
 		return nil
 	}
 
+	h.log.Info("selectInstance loadbalancer", logger.String("type", string(config.LoadBalancer)))
+
 	switch config.LoadBalancer {
 	case LoadBalancerTypeRoundRobin:
 		instance := healthyInstances[config.currentIndex%len(healthyInstances)]
 		config.currentIndex++
+		h.log.Debug("selectInstance roundrobin", logger.Int("index", config.currentIndex))
 		return instance
 	case LoadBalancerTypeRandom:
 		return healthyInstances[rand.IntN(len(healthyInstances))]
