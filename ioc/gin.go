@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"github.com/to404hanga/onlinue_judge_gateway/config"
-	"github.com/to404hanga/onlinue_judge_gateway/web"
-	"github.com/to404hanga/onlinue_judge_gateway/web/jwt"
-	"github.com/to404hanga/onlinue_judge_gateway/web/middleware"
+	"github.com/to404hanga/online_judge_gateway/config"
+	"github.com/to404hanga/online_judge_gateway/web"
+	"github.com/to404hanga/online_judge_gateway/web/jwt"
+	"github.com/to404hanga/online_judge_gateway/web/middleware"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 	"gorm.io/gorm"
 )
@@ -20,8 +20,6 @@ func InitGinServer(l loggerv2.Logger, jwtHandler jwt.Handler, db *gorm.DB, authH
 	if err != nil {
 		log.Panicf("unmarshal gin config failed, err: %v", err)
 	}
-
-	log.Printf("allow_origins: %v", cfg.AllowOrigins)
 
 	corsBuilder := middleware.NewCORSMiddlewareBuilder(
 		cfg.AllowOrigins,

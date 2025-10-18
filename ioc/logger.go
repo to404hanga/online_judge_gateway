@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
-	"github.com/to404hanga/onlinue_judge_gateway/config"
+	"github.com/to404hanga/online_judge_gateway/config"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 )
 
@@ -14,8 +14,6 @@ func InitLogger() loggerv2.Logger {
 	if err != nil {
 		log.Panicf("unmarshal logger config fail, err: %v", err)
 	}
-	log.Printf("all keys: %v", viper.AllKeys())
-	log.Printf("logger config: %+v", cfg)
 
 	l, err := loggerv2.NewZapContextLoggerWithConfig(loggerv2.LoggerConfig{
 		Output: loggerv2.OutputConfig{

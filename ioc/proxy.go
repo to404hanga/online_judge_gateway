@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-	"github.com/to404hanga/onlinue_judge_gateway/config"
-	"github.com/to404hanga/onlinue_judge_gateway/web"
+	"github.com/to404hanga/online_judge_gateway/config"
+	"github.com/to404hanga/online_judge_gateway/web"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 )
 

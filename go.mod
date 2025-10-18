@@ -1,4 +1,4 @@
-module github.com/to404hanga/onlinue_judge_gateway
+module github.com/to404hanga/online_judge_gateway
 
 go 1.23.4
 

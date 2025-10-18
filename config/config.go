@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/to404hanga/onlinue_judge_gateway/web/middleware"
+	"github.com/to404hanga/online_judge_gateway/web/middleware"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 )
 
