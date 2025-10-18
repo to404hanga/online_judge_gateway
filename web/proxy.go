@@ -41,9 +41,10 @@ type ServiceConfig struct {
 type LoadBalancerType string
 
 const (
-	LoadBalancerTypeRoundRobin     LoadBalancerType = "round_robin"     // 轮询负载均衡
-	LoadBalancerTypeRandom         LoadBalancerType = "random"          // 随机负载均衡
-	LoadBalancerTypeWeightedRandom LoadBalancerType = "weighted_random" // 加权随机负载均衡
+	LoadBalancerTypeRoundRobin         LoadBalancerType = "round_robin"          // 轮询负载均衡
+	LoadBalancerTypeRandom             LoadBalancerType = "random"               // 随机负载均衡
+	LoadBalancerTypeWeightedRandom     LoadBalancerType = "weighted_random"      // 加权随机负载均衡
+	LoadBalancerTypeWeightedRoundRobin LoadBalancerType = "weighted_round_robin" // 加权轮询负载均衡
 )
 
 type ProxyHandler struct {
@@ -222,18 +223,19 @@ func (h *ProxyHandler) selectInstance(config *ServiceConfig) *ServiceInstance {
 		return nil
 	}
 
-	h.log.Info("selectInstance loadbalancer", logger.String("type", string(config.LoadBalancer)))
-
 	switch config.LoadBalancer {
 	case LoadBalancerTypeRoundRobin:
 		instance := healthyInstances[config.currentIndex%len(healthyInstances)]
 		config.currentIndex++
-		h.log.Debug("selectInstance roundrobin", logger.Int("index", config.currentIndex))
 		return instance
 	case LoadBalancerTypeRandom:
 		return healthyInstances[rand.IntN(len(healthyInstances))]
 	case LoadBalancerTypeWeightedRandom:
 		return h.selectWeightedRandomInstance(healthyInstances)
+	case LoadBalancerTypeWeightedRoundRobin:
+		instance := h.selectWeightedRoundRobinInstance(healthyInstances, config.currentIndex)
+		config.currentIndex++
+		return instance
 	default:
 		return healthyInstances[0]
 	}
@@ -254,6 +256,24 @@ func (h *ProxyHandler) selectWeightedRandomInstance(instances []*ServiceInstance
 			return instance
 		}
 		randWeight -= instance.Weight
+	}
+	return instances[0]
+}
+
+func (h *ProxyHandler) selectWeightedRoundRobinInstance(instances []*ServiceInstance, currentIndex int) *ServiceInstance {
+	totalWeight := 0
+	for _, instance := range instances {
+		totalWeight += instance.Weight
+	}
+	if totalWeight == 0 {
+		return instances[0]
+	}
+	targetWeight := currentIndex % totalWeight
+	for _, instance := range instances {
+		if targetWeight < instance.Weight {
+			return instance
+		}
+		targetWeight -= instance.Weight
 	}
 	return instances[0]
 }
