@@ -4,37 +4,37 @@ db:
   username: "oj"
   password: "123456"
   dbname: "online_judge"
-  table_prefix: ""
+  tablePrefix: ""
 
 log:
   development: true
   type: 1 # 0-控制台, 1-文件, 2-控制台+文件
-  log_file_path: "./log/gateway.log"
-  auto_create_file: true
+  logFilePath: "./log/gateway.log"
+  autoCreateFile: true
 
 gin:
-  allow_origins:
+  allowOrigins:
     - "*"
-  allow_methods:
+  allowMethods:
     - "GET"
     - "POST"
     - "PUT"
     - "DELETE"
     - "OPTIONS"
-  allow_headers:
+  allowHeaders:
     - "Content-Type"
     - "Authorization"
     - "X-JWT-Token"
     - "X-Refresh-Token"
-  expose_headers:
+  exposeHeaders:
     - "X-JWT-Token"
     - "X-Refresh-Token"
-  allow_credentials: false
-  max_age: 3600 # 单位: 秒
-  login_check_pass_pairs:
+  allowCredentials: false
+  maxAge: 3600 # 单位: 秒
+  loginCheckPassPairs:
     - path: "/auth/login"
       method: "POST"
-  admin_check_pairs:
+  adminCheckPairs:
     - path: "/api"
       method: "ANY"
       cmd:
@@ -48,11 +48,11 @@ redis:
   db: 0
 
 jwt:
-  jwt_expiration: 4320 # 3 天, 单位: 分钟
-  refresh_expiration: 10080 # 7 天, 单位: 分钟
-  jwt_key: "a7f3e9d2c8b4f1a6e5d8c3b7f2a9e6d1c4b8f5a2e7d3c9b6f1a4e8d2c5b9f3a6" # 64 位随机字符串
-  refresh_key: "e1d4c7b2f8a5e9d3c6b1f4a7e2d5c8b3f6a9e4d7c1b5f2a8e6d9c3b7f1a4e8d2" # 64 位随机字符串
+  jwtExpiration: 4320 # 3 天, 单位: 分钟
+  refreshExpiration: 10080 # 7 天, 单位: 分钟
+  jwtKey: "a7f3e9d2c8b4f1a6e5d8c3b7f2a9e6d1c4b8f5a2e7d3c9b6f1a4e8d2c5b9f3a6" # 64 位随机字符串
+  refreshKey: "e1d4c7b2f8a5e9d3c6b1f4a7e2d5c8b3f6a9e4d7c1b5f2a8e6d9c3b7f1a4e8d2" # 64 位随机字符串
 
 proxy:
-  health_check_interval: 60 # 单位: 秒
-  health_check_timeout: 5 # 单位: 秒
+  healthCheckInterval: 60 # 单位: 秒
+  healthCheckTimeout: 5 # 单位: 秒
