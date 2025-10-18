@@ -29,7 +29,7 @@ gin:
   expose_headers:
     - "X-JWT-Token"
     - "X-Refresh-Token"
-  AllowCredentials: false
+  allow_credentials: false
   max_age: 3600 # 单位: 秒
   login_check_pass_pairs:
     - path: "/auth/login"

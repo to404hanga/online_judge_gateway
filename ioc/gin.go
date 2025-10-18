@@ -21,6 +21,8 @@ func InitGinServer(l loggerv2.Logger, jwtHandler jwt.Handler, db *gorm.DB, authH
 		log.Panicf("unmarshal gin config failed, err: %v", err)
 	}
 
+	log.Printf("allow_origins: %v", cfg.AllowOrigins)
+
 	corsBuilder := middleware.NewCORSMiddlewareBuilder(
 		cfg.AllowOrigins,
 		cfg.AllowMethods,

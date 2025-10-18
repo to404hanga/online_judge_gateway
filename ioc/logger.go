@@ -14,6 +14,8 @@ func InitLogger() loggerv2.Logger {
 	if err != nil {
 		log.Panicf("unmarshal logger config fail, err: %v", err)
 	}
+	log.Printf("all keys: %v", viper.AllKeys())
+	log.Printf("logger config: %+v", cfg)
 
 	l, err := loggerv2.NewZapContextLoggerWithConfig(loggerv2.LoggerConfig{
 		Output: loggerv2.OutputConfig{

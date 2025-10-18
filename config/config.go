@@ -13,7 +13,7 @@ type LoggerConfig struct {
 }
 
 func (LoggerConfig) Key() string {
-	return "logger"
+	return "log"
 }
 
 type GinConfig struct {
