@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 	constants "github.com/to404hanga/online_judge_gateway/constant"
 	"github.com/to404hanga/online_judge_gateway/web/jwt"
-	"github.com/to404hanga/online_judge_gateway/web/middleware"
 	"github.com/to404hanga/pkg404/logger"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 )
@@ -74,17 +73,17 @@ func NewProxyHandler(healthCheckInterval, healthCheckTimeout time.Duration, log 
 func (h *ProxyHandler) Register(r *gin.Engine) {
 	r.Any("/api/*path", h.ProxyHandler) // 转发路由不使用日志中间件
 
-	// 管理接口
-	admin := r.Group("/admin/proxy").Use(middleware.Logger(h.log))
-	{
-		admin.GET("/services", h.GetServicesHandler)
-		admin.POST("/services", h.AddServiceHandler)
-		admin.DELETE("/services", h.RemoveServiceHandler)
+	// 管理接口, 已弃用
+	// admin := r.Group("/admin/proxy").Use(middleware.Logger(h.log))
+	// {
+	// 	admin.GET("/services", h.GetServicesHandler)
+	// 	admin.POST("/services", h.AddServiceHandler)
+	// 	admin.DELETE("/services", h.RemoveServiceHandler)
 
-		admin.GET("/services/:service/instances", h.GetServiceInstancesHandler)
-		admin.POST("/services/:service/instances", h.AddInstancesHandler)
-		admin.DELETE("/services/:service/instance", h.RemoveInstanceHandler)
-	}
+	// 	admin.GET("/services/:service/instances", h.GetServiceInstancesHandler)
+	// 	admin.POST("/services/:service/instances", h.AddInstancesHandler)
+	// 	admin.DELETE("/services/:service/instance", h.RemoveInstanceHandler)
+	// }
 }
 
 func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
