@@ -39,6 +39,7 @@ func InitGinServer(l loggerv2.Logger, jwtHandler jwt.Handler, db *gorm.DB, authH
 
 	authHandler.Register(engine)
 	proxyHandler.Register(engine)
+	web.NewHealthHandler().Register(engine)
 
 	return &web.GinServer{
 		Engine: engine,

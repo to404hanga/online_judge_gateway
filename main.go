@@ -19,6 +19,7 @@ func main() {
 	}
 
 	app := BuildDependency()
+	log.Println("gin server start")
 	if err := app.Start(); err != nil {
 		log.Panicf("gin server failed: %v", err)
 	}

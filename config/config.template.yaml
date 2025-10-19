@@ -34,6 +34,8 @@ gin:
   loginCheckPassPairs:
     - path: "/auth/login"
       method: "POST"
+    - path: "/health"
+      method: "GET"
   adminCheckPairs:
     - path: "/api"
       method: "ANY"
