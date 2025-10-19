@@ -163,7 +163,7 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 
 		req.Header.Set(constants.HeaderForwardedByKey, constants.GatewayServiceName)
 		req.Header.Set(constants.HeaderRequestIDKey, generateRequestID())
-		req.Header.Set(constants.HeaderUserID, strconv.FormatUint(uc.UserId, 10))
+		req.Header.Set(constants.HeaderUserIDKey, strconv.FormatUint(uc.UserId, 10))
 	}
 
 	// 响应修改
