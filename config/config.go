@@ -39,6 +39,11 @@ type DBConfig struct {
 	Password    string `yaml:"password"`
 	DBName      string `yaml:"database"`
 	TablePrefix string `yaml:"tablePrefix"`
+	// 连接池配置
+	MaxOpenConns    int `yaml:"maxOpenConns"`    // 最大打开连接数
+	MaxIdleConns    int `yaml:"maxIdleConns"`    // 最大空闲连接数
+	ConnMaxLifetime int `yaml:"connMaxLifetime"` // 连接最大生存时间（分钟）
+	ConnMaxIdleTime int `yaml:"connMaxIdleTime"` // 连接最大空闲时间（分钟）
 }
 
 func (DBConfig) Key() string {
