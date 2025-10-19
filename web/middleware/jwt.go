@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	ojmodel "github.com/to404hanga/online_judge_common/model"
 	constants "github.com/to404hanga/online_judge_gateway/constant"
 	ojjwt "github.com/to404hanga/online_judge_gateway/web/jwt"
+	"github.com/to404hanga/pkg404/cachex/lru"
 	"github.com/to404hanga/pkg404/logger"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 	"gorm.io/gorm"
@@ -26,12 +28,14 @@ type JWTMiddlewareBuilder struct {
 	loginCheckPassPairs []PathMethodPair
 	adminCheckPairs     []PathMethodPair
 	log                 loggerv2.Logger
+	cache               *lru.Cache
 }
 
-func NewJWTMiddlewareBuilder(handler ojjwt.Handler, db *gorm.DB, loginCheckPassPairs, adminCheckPairs []PathMethodPair, log loggerv2.Logger) *JWTMiddlewareBuilder {
+func NewJWTMiddlewareBuilder(handler ojjwt.Handler, db *gorm.DB, cache *lru.Cache, loginCheckPassPairs, adminCheckPairs []PathMethodPair, log loggerv2.Logger) *JWTMiddlewareBuilder {
 	return &JWTMiddlewareBuilder{
 		Handler:             handler,
 		db:                  db,
+		cache:               cache,
 		loginCheckPassPairs: loginCheckPassPairs,
 		adminCheckPairs:     adminCheckPairs,
 		log:                 log,
@@ -96,21 +100,41 @@ func (m *JWTMiddlewareBuilder) CheckAdmin() gin.HandlerFunc {
 		if shouldCheck {
 			uc, err := m.GetUserClaims(ctx)
 			if err != nil {
-				m.log.ErrorContext(ctx, "CheckAdmin failed", logger.Error(err))
-				ctx.AbortWithStatus(http.StatusUnauthorized)
+				m.log.ErrorContext(ctx, "CheckAdmin GetUserClaims failed", logger.Error(err))
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": err.Error(),
+				})
 				return
+			}
+			cacheKey := fmt.Sprintf(constants.CacheUserKey, uc.UserId)
+			val, ok := m.cache.Get(cacheKey)
+			if ok {
+				user, ok := val.(constants.CacheUser)
+				if ok {
+					if user.Role != int8(ojmodel.UserRoleAdmin) {
+						m.log.ErrorContext(ctx, "CheckAdmin failed", logger.Int8("actual_role", user.Role))
+						ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+							"error": "权限不足",
+						})
+						return
+					}
+				} else {
+					m.log.ErrorContext(ctx, "CheckAdmin assert failed", logger.Any("value", val))
+				}
 			}
 			var user ojmodel.User
-			if err = m.db.Where("id = ?", uc.UserId).Select("role").First(&user).Error; err != nil {
-				m.log.ErrorContext(ctx, "CheckAdmin failed", logger.Error(err))
-				ctx.AbortWithStatus(http.StatusUnauthorized)
+			if err = m.db.Where("id = ?", uc.UserId).Select("username", "realname", "realname", "role").First(&user).Error; err != nil {
+				m.log.ErrorContext(ctx, "CheckAdmin get db failed", logger.Error(err))
+				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
 				return
 			}
-			if *user.Role != ojmodel.UserRoleAdmin {
-				m.log.ErrorContext(ctx, "CheckAdmin failed", logger.Error(err))
-				ctx.AbortWithStatus(http.StatusForbidden)
-				return
-			}
+			m.cache.Add(cacheKey, constants.CacheUser{
+				Username: user.Username,
+				Realname: user.Realname,
+				Role:     user.Role.Int8(),
+			})
 		}
 
 		ctx.Next()

@@ -16,6 +16,7 @@ func BuildDependency() *web.GinServer {
 		ioc.InitRedis,
 		ioc.InitJWTHandler,
 		ioc.InitProxyHandler,
+		ioc.InitLRUCache,
 
 		service.NewAuthService,
 

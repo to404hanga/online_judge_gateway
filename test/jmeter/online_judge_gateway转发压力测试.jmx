@@ -20,7 +20,7 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP请求" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP请求">
           <stringProp name="HTTPSampler.domain">localhost</stringProp>
           <stringProp name="HTTPSampler.port">8080</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
@@ -34,11 +34,11 @@
           </elementProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP信息头管理器" enabled="true">
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP信息头管理器">
             <collectionProp name="HeaderManager.headers">
               <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">Authorization</stringProp>
-                <stringProp name="Header.value">Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjExMTc2MTIsIlVzZXJJZCI6MSwiU3NpZCI6IjIzZjIwODQ1LTA3YjItNDBlMC05ODVlLTQzZGJiNjJlZTNhZSIsIlVzZXJBZ2VudCI6ImF4aW9zLzAuMjEuMSJ9.iwrdaAq1SmiyhBCZ8eC7I2E-9A_6d6KRLs25yiJZ3OV8E3O8voAQ7FkRbMtkJYiv6tgGXBjqS7JSdzlDKKsoGw</stringProp>
+                <stringProp name="Header.value">Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjExMzk1OTEsIlVzZXJJZCI6MSwiU3NpZCI6IjVhYTcxOGE5LWUzODMtNDY2OS1hNWFjLWM0NzdkNTU5NmNkZCIsIlVzZXJBZ2VudCI6ImF4aW9zLzAuMjEuMSJ9.OMjjJQJJvlHFlkH2gO0v8FhEZQHCR2BSEkR1QfDT_XLbyBKJ-jOxX4j124c_m9Bcdqqn-uSkc5-mQz5fAb_LEw</stringProp>
               </elementProp>
             </collectionProp>
           </HeaderManager>

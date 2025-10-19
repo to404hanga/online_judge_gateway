@@ -16,3 +16,13 @@ const (
 const (
 	ContextUserClaimsKey = "X-User-Claims"
 )
+
+const (
+	CacheUserKey = "user:%d" // args: user.ID
+)
+
+type CacheUser struct {
+	Username string
+	Realname string
+	Role     int8
+}

@@ -19,9 +19,10 @@ func BuildDependency() *web.GinServer {
 	cmdable := ioc.InitRedis()
 	handler := ioc.InitJWTHandler(cmdable)
 	db := ioc.InitDB()
-	authService := service.NewAuthService(db)
+	cache := ioc.InitLRUCache()
+	authService := service.NewAuthService(db, cmdable, logger, cache)
 	authHandler := web.NewAuthHandler(authService, handler, logger)
 	proxyHandler := ioc.InitProxyHandler(logger)
-	ginServer := ioc.InitGinServer(logger, handler, db, authHandler, proxyHandler)
+	ginServer := ioc.InitGinServer(logger, handler, db, cache, authHandler, proxyHandler)
 	return ginServer
 }

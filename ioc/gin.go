@@ -10,11 +10,12 @@ import (
 	"github.com/to404hanga/online_judge_gateway/web"
 	"github.com/to404hanga/online_judge_gateway/web/jwt"
 	"github.com/to404hanga/online_judge_gateway/web/middleware"
+	"github.com/to404hanga/pkg404/cachex/lru"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 	"gorm.io/gorm"
 )
 
-func InitGinServer(l loggerv2.Logger, jwtHandler jwt.Handler, db *gorm.DB, authHandler *web.AuthHandler, proxyHandler *web.ProxyHandler) *web.GinServer {
+func InitGinServer(l loggerv2.Logger, jwtHandler jwt.Handler, db *gorm.DB, cache *lru.Cache, authHandler *web.AuthHandler, proxyHandler *web.ProxyHandler) *web.GinServer {
 	var cfg config.GinConfig
 	err := viper.UnmarshalKey(cfg.Key(), &cfg)
 	if err != nil {
@@ -28,7 +29,7 @@ func InitGinServer(l loggerv2.Logger, jwtHandler jwt.Handler, db *gorm.DB, authH
 		cfg.ExposeHeaders,
 		cfg.AllowCredentials,
 		time.Duration(cfg.MaxAge)*time.Second)
-	jwtBuilder := middleware.NewJWTMiddlewareBuilder(jwtHandler, db, cfg.LoginCheckPassPairs, cfg.AdminCheckPairs, l)
+	jwtBuilder := middleware.NewJWTMiddlewareBuilder(jwtHandler, db, cache, cfg.LoginCheckPassPairs, cfg.AdminCheckPairs, l)
 
 	engine := gin.Default()
 	engine.Use(

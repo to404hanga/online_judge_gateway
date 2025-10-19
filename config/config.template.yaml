@@ -71,3 +71,6 @@ proxy:
           healthy: true
       healthCheck: "/health"
       loadBalancer: "roundrobin"
+
+lru:
+  size: 200
