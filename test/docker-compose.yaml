@@ -43,6 +43,31 @@ services:
     networks:
       - online-judge-network
 
+  # 测试服务 - 可以启动多个实例用于测试负载均衡
+  test-service-1:
+    build:
+      context: ./online_judge_gateway_test
+      dockerfile: Dockerfile
+    ports:
+      - "${TEST_PORT_1:-8081}:${TEST_PORT_1:-8081}"
+    environment:
+      - TEST_PORT=${TEST_PORT_1:-8081}
+    restart: unless-stopped
+    networks:
+      - online-judge-network
+
+  test-service-2:
+    build:
+      context: ./online_judge_gateway_test
+      dockerfile: Dockerfile
+    ports:
+      - "${TEST_PORT_2:-8082}:${TEST_PORT_2:-8082}"
+    environment:
+      - TEST_PORT=${TEST_PORT_2:-8082}
+    restart: unless-stopped
+    networks:
+      - online-judge-network
+
 volumes:
   mysql_data:
 
