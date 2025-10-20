@@ -123,7 +123,7 @@ func (m *JWTMiddlewareBuilder) CheckAdmin() gin.HandlerFunc {
 				}
 			}
 			var user ojmodel.User
-			if err = m.db.Where("id = ?", uc.UserId).Select("username", "realname", "realname", "role").First(&user).Error; err != nil {
+			if err = m.db.WithContext(ctx).Where("id = ?", uc.UserId).Select("username", "realname", "realname", "role").First(&user).Error; err != nil {
 				m.log.ErrorContext(ctx, "CheckAdmin get db failed", logger.Error(err))
 				ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),

@@ -37,7 +37,7 @@ func NewAuthService(db *gorm.DB, rds redis.Cmdable, log loggerv2.Logger, cache *
 
 func (s *AuthServiceImpl) Login(ctx context.Context, req *domain.LoginRequest) (uint64, error) {
 	var user ojmodel.User
-	err := s.db.Model(&ojmodel.User{}).
+	err := s.db.WithContext(ctx).Model(&ojmodel.User{}).
 		Where("username = ?", req.Username).
 		Where("status = ?", ojmodel.UserStatusNormal).
 		Select("id", "username", "realname", "realname", "role", "password").
@@ -62,7 +62,7 @@ func (s *AuthServiceImpl) Login(ctx context.Context, req *domain.LoginRequest) (
 
 func (s *AuthServiceImpl) Info(ctx context.Context, userId uint64) (*domain.InfoResponse, error) {
 	var user ojmodel.User
-	err := s.db.Model(&ojmodel.User{}).
+	err := s.db.WithContext(ctx).Model(&ojmodel.User{}).
 		Where("id = ?", userId).
 		Select("username", "realname", "role", "status", "created_at", "updated_at").
 		First(&user).Error
