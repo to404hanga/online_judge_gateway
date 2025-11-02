@@ -31,9 +31,13 @@ gin:
     - "Authorization"
     - "X-JWT-Token"
     - "X-Refresh-Token"
+    - "X-Competition-JWT-Token"
+    - "X-Competition-Refresh-Token"
   exposeHeaders:
     - "X-JWT-Token"
     - "X-Refresh-Token"
+    - "X-Competition-JWT-Token"
+    - "X-Competition-Refresh-Token"
   allowCredentials: false
   maxAge: 3600 # 单位: 秒
   loginCheckPassPairs:
