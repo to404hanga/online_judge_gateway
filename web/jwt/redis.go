@@ -129,7 +129,7 @@ func (h *RedisJWTHandler) SetRefreshToken(ctx *gin.Context, UserId uint64, ssid 
 	if err != nil {
 		return err
 	}
-	ctx.Header(constants.HeaderLoginTokenKey, tokenStr)
+	ctx.Header(constants.HeaderRefreshTokenKey, tokenStr)
 	return nil
 }
 
