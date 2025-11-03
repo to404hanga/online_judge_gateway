@@ -81,13 +81,13 @@ proxy:
   services:
     - serviceName: "online_judge_controller"
       instances:
-        - url: "http://online_judge_controller-1:8081"
+        - url: "http://online-judge-controller-1:8081"
           weight: 1
           healthy: true
-        - url: "http://online_judge_controller-2:8082"
+        - url: "http://online-judge-controller-2:8082"
           weight: 1
           healthy: true
-        - url: "http://online_judge_controller-3:8083"
+        - url: "http://online-judge-controller-3:8083"
           weight: 1
           healthy: true
       healthCheck: "/health"
