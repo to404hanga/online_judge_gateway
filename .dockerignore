@@ -33,3 +33,4 @@ config/config.yaml
 Dockerfile
 .dockerignore
 docker-compose.yml
+docker-compose.yaml
