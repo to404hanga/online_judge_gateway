@@ -49,7 +49,18 @@ gin:
     - path: "/api"
       method: "ANY"
       cmd:
-        - "?"
+        - "CreateProblem" # 创建题目
+        - "UpdateProblem" # 更新题目
+        - "GetProblemUploadPresignedURL" # 获取题目上传预签名URL
+        - "GetProblemTestcaseUploadPresignedURL" # 获取题目测试用例上传预签名URL
+        - "GetProblemTestcaseDownloadPresignedURL" # 获取题目测试用例下载预签名URL
+        - "CreateCompetition" # 创建比赛
+        - "UpdateCompetition" # 更新比赛
+        - "AddCompetitionProblem" # 添加比赛题目
+        - "RemoveCompetitionProblem" # 删除比赛题目
+        - "EnableCompetitionProblem" # 启用比赛题目
+        - "DisableCompetitionProblem" # 禁用比赛题目
+        - "ExportCompetitionData" # 导出比赛数据
   addr: ":8080"
 
 redis:
@@ -70,7 +81,13 @@ proxy:
   services:
     - serviceName: "online_judge_controller"
       instances:
-        - url: "http://localhost:8081"
+        - url: "http://online_judge_controller-1:8081"
+          weight: 1
+          healthy: true
+        - url: "http://online_judge_controller-2:8082"
+          weight: 1
+          healthy: true
+        - url: "http://online_judge_controller-3:8083"
           weight: 1
           healthy: true
       healthCheck: "/health"
