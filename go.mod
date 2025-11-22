@@ -11,7 +11,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
-	github.com/to404hanga/online_judge_common v0.0.2
+	github.com/to404hanga/online_judge_common v0.0.12
 	github.com/to404hanga/pkg404 v0.0.33
 	golang.org/x/crypto v0.40.0
 	gorm.io/driver/mysql v1.6.0
@@ -64,5 +64,5 @@ require (
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 )
