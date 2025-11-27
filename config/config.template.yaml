@@ -95,3 +95,7 @@ proxy:
 
 lru:
   size: 200
+
+etcd:
+  endpoints:
+    - "localhost:2379"

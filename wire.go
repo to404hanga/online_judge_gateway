@@ -17,6 +17,7 @@ func BuildDependency() *web.GinServer {
 		ioc.InitJWTHandler,
 		ioc.InitProxyHandler,
 		ioc.InitLRUCache,
+		ioc.InitEtcdClient,
 
 		service.NewAuthService,
 

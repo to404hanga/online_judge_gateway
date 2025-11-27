@@ -2,39 +2,53 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"math/rand/v2"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
+	json "github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	constants "github.com/to404hanga/online_judge_gateway/constant"
 	"github.com/to404hanga/online_judge_gateway/web/jwt"
 	"github.com/to404hanga/pkg404/logger"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 // ServiceInstance 服务实例
 type ServiceInstance struct {
-	URL       string    `json:"url" binding:"required"`
-	Weight    int       `json:"weight"`     // 权重
-	Healthy   bool      `json:"healthy"`    // 是否健康
-	LastCheck time.Time `json:"last_check"` // 最后检查时间
+	URL    string `json:"url" binding:"required"`
+	Weight int    `json:"weight"` // 权重
 }
 
 // ServiceConfig 服务配置
 type ServiceConfig struct {
 	ServiceName  string             `json:"service_name" binding:"required"`  // 服务名称
 	Instances    []*ServiceInstance `json:"instances"`                        // 服务实例列表
-	HealthCheck  string             `json:"health_check" binding:"required"`  // 健康检查路径
 	LoadBalancer LoadBalancerType   `json:"load_balancer" binding:"required"` // 负载均衡策略
 	mux          sync.RWMutex
 	currentIndex int // 当前轮询索引
+}
+
+type SetServiceConfig struct {
+	Prefix       string           `json:"prefix"`        // etcd 前缀
+	LoadBalancer LoadBalancerType `json:"load_balancer"` // 负载均衡策略
+}
+
+type EtcdServiceConfig struct {
+	Addr   string `json:"addr"`
+	Weight int    `json:"weight"`
 }
 
 type LoadBalancerType string
@@ -47,43 +61,127 @@ const (
 )
 
 type ProxyHandler struct {
-	services            map[string]*ServiceConfig
-	mux                 sync.RWMutex
-	healthCheckInterval time.Duration
-	healthCheckTimeout  time.Duration
-	log                 loggerv2.Logger
+	services map[string]*ServiceConfig
+	mux      sync.RWMutex
+	log      loggerv2.Logger
+	etcdCli  *clientv3.Client
 }
 
 var _ Handler = (*ProxyHandler)(nil)
 
-func NewProxyHandler(healthCheckInterval, healthCheckTimeout time.Duration, log loggerv2.Logger, services map[string]*ServiceConfig) *ProxyHandler {
+func NewProxyHandler(log loggerv2.Logger, etcdCli *clientv3.Client, svcCfgs []SetServiceConfig) *ProxyHandler {
 	handler := &ProxyHandler{
-		services:            services,
-		healthCheckInterval: healthCheckInterval,
-		healthCheckTimeout:  healthCheckTimeout,
-		log:                 log,
+		services: make(map[string]*ServiceConfig),
+		log:      log,
+		etcdCli:  etcdCli,
 	}
 
-	// 启动健康检查
-	go handler.startHealthCheck()
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	for _, svcCfg := range svcCfgs {
+		if err := handler.initServiceInstances(ctx, svcCfg.Prefix, svcCfg.LoadBalancer); err != nil {
+			handler.log.ErrorContext(ctx, "init service instances error", logger.Error(err))
+			continue
+		}
+	}
 
 	return handler
 }
 
 func (h *ProxyHandler) Register(r *gin.Engine) {
 	r.Any("/api/*path", h.ProxyHandler) // 转发路由不使用日志中间件
+}
 
-	// 管理接口, 已弃用
-	// admin := r.Group("/admin/proxy").Use(middleware.Logger(h.log))
-	// {
-	// 	admin.GET("/services", h.GetServicesHandler)
-	// 	admin.POST("/services", h.AddServiceHandler)
-	// 	admin.DELETE("/services", h.RemoveServiceHandler)
+func (h *ProxyHandler) initServiceInstances(ctx context.Context, prefix string, loadBalancer LoadBalancerType) error {
+	ctxTimeout, cancel := context.WithTimeout(ctx, 2*time.Second)
+	resp, err := h.etcdCli.Get(ctxTimeout, prefix, clientv3.WithPrefix())
+	cancel()
+	if err != nil {
+		return fmt.Errorf("get etcd key %s error: %w", prefix, err)
+	}
+	h.services[prefix] = &ServiceConfig{
+		ServiceName:  prefix,
+		LoadBalancer: loadBalancer,
+	}
 
-	// 	admin.GET("/services/:service/instances", h.GetServiceInstancesHandler)
-	// 	admin.POST("/services/:service/instances", h.AddInstancesHandler)
-	// 	admin.DELETE("/services/:service/instance", h.RemoveInstanceHandler)
-	// }
+	for _, kv := range resp.Kvs {
+		// Key: /services/{service_name}/{addr}
+		parts := strings.Split(string(kv.Key), "/")
+		key := parts[2]
+		var cfg EtcdServiceConfig
+		if err := json.Unmarshal(kv.Value, &cfg); err != nil {
+			return fmt.Errorf("unmarshal etcd value error: %w", err)
+		}
+		h.services[key].Instances = append(h.services[key].Instances, &ServiceInstance{
+			URL:    cfg.Addr,
+			Weight: cfg.Weight,
+		})
+	}
+
+	watchStartRev := resp.Header.Revision + 1
+	go h.watcher(ctx, prefix, watchStartRev)
+
+	return nil
+}
+
+func (h *ProxyHandler) watcher(ctx context.Context, prefix string, startRev int64) {
+	rch := h.etcdCli.Watch(ctx, prefix, clientv3.WithPrefix(), clientv3.WithRev(startRev))
+
+	select {
+	case <-ctx.Done():
+		h.log.InfoContext(ctx, "watcher context done", logger.String("prefix", prefix))
+		return
+	case wresp := <-rch:
+		h.mux.Lock()
+		for _, ev := range wresp.Events {
+			parts := strings.Split(string(ev.Kv.Key), "/")
+			if len(parts) != 4 {
+				continue
+			}
+			key := parts[2]
+			url := parts[3]
+			switch ev.Type {
+			case mvccpb.PUT: // 修改或新增
+				var cfg EtcdServiceConfig
+				if err := json.Unmarshal(ev.Kv.Value, &cfg); err != nil {
+					h.log.ErrorContext(ctx, "unmarshal etcd value error", logger.Error(err))
+					continue
+				}
+				flag := false
+				for i := 0; i < len(h.services[key].Instances) && !flag; i++ {
+					if h.services[key].Instances[i].URL == cfg.Addr {
+						h.services[key].Instances[i] = &ServiceInstance{
+							URL:    cfg.Addr,
+							Weight: cfg.Weight,
+						}
+						flag = true
+					}
+				}
+				if !flag {
+					h.services[key].Instances = append(h.services[key].Instances, &ServiceInstance{
+						URL:    cfg.Addr,
+						Weight: cfg.Weight,
+					})
+				}
+				h.log.InfoContext(ctx, "service instance updated",
+					logger.String("service_name", key),
+					logger.String("url", url),
+					logger.Int("weight", cfg.Weight),
+				)
+			case mvccpb.DELETE: // 删除
+				for i := 0; i < len(h.services[key].Instances); i++ {
+					if h.services[key].Instances[i].URL == url {
+						h.services[key].Instances = append(h.services[key].Instances[:i], h.services[key].Instances[i+1:]...)
+						h.log.InfoContext(ctx, "service instance deleted",
+							logger.String("service_name", key),
+							logger.String("url", url),
+						)
+						break
+					}
+				}
+			}
+		}
+		h.mux.Unlock()
+	}
 }
 
 func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
@@ -178,8 +276,6 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 			logger.String("target", instance.URL),
 			logger.Error(err),
 		)
-		// 标记实例为不健康
-		instance.Healthy = false
 		w.WriteHeader(http.StatusBadGateway)
 		w.Write([]byte(`{"error":"backend service error"}`))
 	}
@@ -211,12 +307,7 @@ func (h *ProxyHandler) selectInstance(config *ServiceConfig) *ServiceInstance {
 	config.mux.Lock()
 	defer config.mux.Unlock()
 
-	healthyInstances := make([]*ServiceInstance, 0, len(config.Instances))
-	for _, instance := range config.Instances {
-		if instance.Healthy {
-			healthyInstances = append(healthyInstances, instance)
-		}
-	}
+	healthyInstances := config.Instances
 
 	if len(healthyInstances) == 0 {
 		return nil
@@ -277,74 +368,6 @@ func (h *ProxyHandler) selectWeightedRoundRobinInstance(instances []*ServiceInst
 	return instances[0]
 }
 
-// startHealthCheck 启动健康检查
-func (h *ProxyHandler) startHealthCheck() {
-	ticker := time.NewTicker(h.healthCheckInterval)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		h.performHealthCheck()
-	}
-}
-
-// performHealthCheck 执行健康检查
-func (h *ProxyHandler) performHealthCheck() {
-	h.mux.RLock()
-	services := make(map[string]*ServiceConfig)
-	for k, v := range h.services {
-		services[k] = v
-	}
-	h.mux.RUnlock()
-
-	for serviceName, config := range services {
-		for _, instance := range config.Instances {
-			go h.checkInstanceHealth(serviceName, instance, config.HealthCheck)
-		}
-	}
-}
-
-// checkInstanceHealth 检查实例健康状态
-func (h *ProxyHandler) checkInstanceHealth(serviceName string, instance *ServiceInstance, healthPath string) {
-	ctx, cancel := context.WithTimeout(context.Background(), h.healthCheckTimeout)
-	defer cancel()
-
-	healthURL := instance.URL + healthPath
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthURL, nil)
-	if err != nil {
-		instance.Healthy = false
-		h.log.WarnContext(ctx, "create health check request error",
-			logger.String("service_name", serviceName),
-			logger.String("instance_url", instance.URL),
-			logger.Error(err),
-		)
-		return
-	}
-
-	client := &http.Client{Timeout: h.healthCheckTimeout}
-	resp, err := client.Do(req)
-	if err != nil {
-		instance.Healthy = false
-		h.log.WarnContext(ctx, "health check request error",
-			logger.String("service_name", serviceName),
-			logger.String("instance_url", instance.URL),
-			logger.Error(err),
-		)
-		return
-	}
-	defer resp.Body.Close()
-
-	instance.Healthy = resp.StatusCode == http.StatusOK
-	instance.LastCheck = time.Now()
-
-	if !instance.Healthy {
-		h.log.WarnContext(ctx, "health unhealthy",
-			logger.String("service_name", serviceName),
-			logger.String("instance_url", instance.URL),
-			logger.Int("status_code", resp.StatusCode),
-		)
-	}
-}
-
 // generateRequestID 生成请求ID
 func generateRequestID() string {
 	return uuid.New().String()
@@ -369,14 +392,6 @@ func (h *ProxyHandler) AddServiceHandler(c *gin.Context) {
 
 	h.mux.Lock()
 	defer h.mux.Unlock()
-
-	for i := range services {
-		h.services[services[i].ServiceName] = &services[i]
-		h.log.InfoContext(c, "add service success",
-			logger.String("service", services[i].ServiceName),
-			logger.String("health_check", services[i].HealthCheck),
-		)
-	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "service added"})
 }
@@ -447,7 +462,6 @@ func (h *ProxyHandler) AddInstancesHandler(c *gin.Context) {
 			logger.String("service", serviceName),
 			logger.String("instance", instance.URL),
 			logger.Int("weight", instance.Weight),
-			logger.Bool("healthy", instance.Healthy),
 		)
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "instance added"})

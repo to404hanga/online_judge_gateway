@@ -12,6 +12,10 @@ import (
 	"github.com/to404hanga/online_judge_gateway/web"
 )
 
+import (
+	_ "net/http/pprof"
+)
+
 // Injectors from wire.go:
 
 func BuildDependency() *web.GinServer {
@@ -22,7 +26,8 @@ func BuildDependency() *web.GinServer {
 	cache := ioc.InitLRUCache()
 	authService := service.NewAuthService(db, cmdable, logger, cache)
 	authHandler := web.NewAuthHandler(authService, handler, logger)
-	proxyHandler := ioc.InitProxyHandler(logger)
+	client := ioc.InitEtcdClient()
+	proxyHandler := ioc.InitProxyHandler(logger, client)
 	ginServer := ioc.InitGinServer(logger, handler, db, cache, authHandler, proxyHandler)
 	return ginServer
 }
