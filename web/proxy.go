@@ -98,15 +98,15 @@ func (h *ProxyHandler) initServiceInstances(ctx context.Context, prefix string, 
 	if err != nil {
 		return fmt.Errorf("get etcd key %s error: %w", prefix, err)
 	}
-	h.services[prefix] = &ServiceConfig{
+	parts := strings.Split(prefix, "/")
+	key := parts[2]
+	h.services[key] = &ServiceConfig{
 		ServiceName:  prefix,
 		LoadBalancer: loadBalancer,
+		Instances:    make([]*ServiceInstance, 0, len(resp.Kvs)),
 	}
 
 	for _, kv := range resp.Kvs {
-		// Key: /services/{service_name}/{addr}
-		parts := strings.Split(string(kv.Key), "/")
-		key := parts[2]
 		var cfg EtcdServiceConfig
 		if err := json.Unmarshal(kv.Value, &cfg); err != nil {
 			return fmt.Errorf("unmarshal etcd value error: %w", err)
