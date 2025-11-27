@@ -72,12 +72,6 @@ func (JWTConfig) Key() string {
 	return "jwt"
 }
 
-type ServiceInstanceConfig struct {
-	URL     string `yaml:"url"`     // 服务实例 URL
-	Weight  int    `yaml:"weight"`  // 服务实例权重
-	Healthy bool   `yaml:"healthy"` // 服务实例是否健康
-}
-
 type ServiceConfig struct {
 	Prefix       string `yaml:"prefix"`       // etcd 服务前缀
 	LoadBalancer string `yaml:"loadBalancer"` // 负载均衡策略
