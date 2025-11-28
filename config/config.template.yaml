@@ -77,12 +77,7 @@ jwt:
 
 proxy:
   services:
-    - prefix: "/services/online_judge_controller"
-      loadBalancer: "weighted_round_robin"
+    - "online-judge-controller:8081"
 
 lru:
   size: 200
-
-etcd:
-  endpoints:
-    - "localhost:2379"

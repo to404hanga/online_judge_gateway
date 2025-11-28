@@ -72,13 +72,8 @@ func (JWTConfig) Key() string {
 	return "jwt"
 }
 
-type ServiceConfig struct {
-	Prefix       string `yaml:"prefix"`       // etcd 服务前缀
-	LoadBalancer string `yaml:"loadBalancer"` // 负载均衡策略
-}
-
 type ProxyConfig struct {
-	Services []ServiceConfig `yaml:"services"` // 服务配置
+	Services []string `yaml:"services"` // 服务配置
 }
 
 func (ProxyConfig) Key() string {
