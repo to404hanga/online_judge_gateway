@@ -73,6 +73,7 @@ func (m *JWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		}
 
 		ctx.Set(constants.ContextUserClaimsKey, uc)
+		ctx.Next()
 	}
 }
 
@@ -117,10 +118,12 @@ func (m *JWTMiddlewareBuilder) CheckAdmin() gin.HandlerFunc {
 							"error": "权限不足",
 						})
 						return
+					} else {
+						ctx.Next()
+						return
 					}
-				} else {
-					m.log.ErrorContext(ctx, "CheckAdmin assert failed", logger.Any("value", val))
 				}
+				m.log.ErrorContext(ctx, "CheckAdmin assert failed", logger.Any("value", val))
 			}
 			var user ojmodel.User
 			if err = m.db.WithContext(ctx).Where("id = ?", uc.UserId).Select("username", "realname", "role").First(&user).Error; err != nil {
@@ -135,6 +138,13 @@ func (m *JWTMiddlewareBuilder) CheckAdmin() gin.HandlerFunc {
 				Realname: user.Realname,
 				Role:     user.Role.Int8(),
 			})
+			if *user.Role != ojmodel.UserRoleAdmin {
+				m.log.ErrorContext(ctx, "CheckAdmin failed", logger.Int8("actual_role", user.Role.Int8()))
+				ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+					"error": "权限不足",
+				})
+				return
+			}
 		}
 
 		ctx.Next()
