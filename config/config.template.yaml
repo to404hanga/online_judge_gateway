@@ -66,6 +66,8 @@ gin:
         - "AddUsersToCompetition" # 将用户添加到比赛名单
         - "EnableUsersInCompetition" # 允许比赛名单中的用户参赛
         - "DisableUsersInCompetition" # 禁止比赛名单中的用户参赛
+        
+        - "InitRanking" # 初始化比赛排名
   addr: ":8080"
 
 redis:
