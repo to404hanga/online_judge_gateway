@@ -30,7 +30,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 FROM alpine:latest
 
 # 安装 ca-certificates 用于 HTTPS 请求
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
 # 创建非 root 用户
 RUN addgroup -g 1001 -S appgroup && \
