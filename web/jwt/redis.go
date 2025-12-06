@@ -65,7 +65,7 @@ func (h *RedisJWTHandler) SetLoginToken(ctx *gin.Context, UserId uint64) error {
 }
 
 func (h *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
-	// 优先从Authorization Header提取token
+	// 优先从Authorization Header 提取 token
 	authCode := ctx.GetHeader("Authorization")
 	if authCode != "" {
 		segs := strings.Split(authCode, " ")
@@ -74,7 +74,7 @@ func (h *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
 		}
 	}
 
-	// 如果Header中没有，尝试从Cookie中提取
+	// 如果 Header 中没有，尝试从 Cookie 中提取
 	tokenFromCookie, err := ctx.Cookie(constants.HeaderLoginTokenKey)
 	if err != nil || tokenFromCookie == "" {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
@@ -130,6 +130,16 @@ func (h *RedisJWTHandler) SetRefreshToken(ctx *gin.Context, UserId uint64, ssid 
 		return err
 	}
 	ctx.Header(constants.HeaderRefreshTokenKey, tokenStr)
+	// 同时设置Cookie，支持浏览器自动携带
+	ctx.SetCookie(
+		constants.HeaderRefreshTokenKey,    // cookie名称
+		tokenStr,                           // cookie 值
+		int(h.refreshExpiration.Seconds()), // 过期时间（秒）
+		"/",                                // 路径
+		"",                                 // 域名
+		false,                              // secure (HTTPS)
+		true,                               // httpOnly
+	)
 	return nil
 }
 
