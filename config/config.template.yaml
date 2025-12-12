@@ -62,6 +62,7 @@ gin:
         - "EnableCompetitionProblem" # 启用比赛题目
         - "DisableCompetitionProblem" # 禁用比赛题目
         - "ExportCompetitionData" # 导出比赛数据
+        - "GetCompetitionList" # 获取比赛列表
 
         - "GetUserList" # 获取用户列表
         - "AddUsersToCompetition" # 将用户添加到比赛名单
