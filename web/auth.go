@@ -7,7 +7,6 @@ import (
 	"github.com/to404hanga/online_judge_gateway/domain"
 	"github.com/to404hanga/online_judge_gateway/service"
 	ojjwt "github.com/to404hanga/online_judge_gateway/web/jwt"
-	"github.com/to404hanga/online_judge_gateway/web/middleware"
 	"github.com/to404hanga/pkg404/logger"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
 )
@@ -29,7 +28,7 @@ func NewAuthHandler(authService service.AuthService, jwtHandler ojjwt.Handler, l
 }
 
 func (h *AuthHandler) Register(r *gin.Engine) {
-	auth := r.Group("/auth").Use(middleware.Logger(h.log))
+	auth := r.Group("/auth")
 	{
 		auth.POST("/login", h.LoginHandler)
 		auth.POST("/logout", h.LogoutHandler)

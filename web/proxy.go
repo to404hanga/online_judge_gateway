@@ -6,22 +6,19 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	constants "github.com/to404hanga/online_judge_gateway/constant"
 	"github.com/to404hanga/online_judge_gateway/web/jwt"
+	"github.com/to404hanga/online_judge_gateway/web/middleware"
 	"github.com/to404hanga/pkg404/logger"
 	loggerv2 "github.com/to404hanga/pkg404/logger/v2"
-	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type ProxyHandler struct {
 	services map[string]string
-	mux      sync.RWMutex
 	log      loggerv2.Logger
-	etcdCli  *clientv3.Client
 }
 
 var _ Handler = (*ProxyHandler)(nil)
@@ -34,7 +31,7 @@ func NewProxyHandler(log loggerv2.Logger, services map[string]string) *ProxyHand
 }
 
 func (h *ProxyHandler) Register(r *gin.Engine) {
-	r.Any("/api/*path", h.ProxyHandler) // 转发路由不使用日志中间件
+	r.Any("/api/*path", middleware.Logger(h.log), h.ProxyHandler) // 转发路由不使用日志中间件
 }
 
 func (h *ProxyHandler) ProxyHandler(c *gin.Context) {

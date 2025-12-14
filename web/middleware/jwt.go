@@ -49,6 +49,7 @@ func (m *JWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		method := ctx.Request.Method
 		for _, p := range m.loginCheckPassPairs {
 			if strings.HasPrefix(path, p.Path) && method == p.Method {
+				ctx.Next()
 				return
 			}
 		}
@@ -95,6 +96,9 @@ func (m *JWTMiddlewareBuilder) CheckAdmin() gin.HandlerFunc {
 					shouldCheck = true
 					break
 				}
+			}
+			if shouldCheck {
+				break
 			}
 		}
 
