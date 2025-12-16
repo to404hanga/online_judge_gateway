@@ -54,6 +54,7 @@ gin:
         - "UpdateProblem" # 更新题目
         - "GetProblemList" # 获取题目列表
         - "UploadProblemTestcase" # 上传题目测试用例
+        - "GetProblem" # 获取题目详情
 
         - "CreateCompetition" # 创建比赛
         - "UpdateCompetition" # 更新比赛
@@ -62,12 +63,15 @@ gin:
         - "EnableCompetitionProblem" # 启用比赛题目
         - "DisableCompetitionProblem" # 禁用比赛题目
         - "ExportCompetitionData" # 导出比赛数据
+        - "GetCompetitionList" # 获取比赛列表
+        - "GetCompetitionProblemList" # 获取比赛题目列表
+        - "GetCompetition" # 获取比赛详情
 
         - "GetUserList" # 获取用户列表
         - "AddUsersToCompetition" # 将用户添加到比赛名单
         - "EnableUsersInCompetition" # 允许比赛名单中的用户参赛
         - "DisableUsersInCompetition" # 禁止比赛名单中的用户参赛
-        
+
         - "InitRanking" # 初始化比赛排名
   addr: ":8080"
 
