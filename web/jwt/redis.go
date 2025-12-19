@@ -21,22 +21,18 @@ var (
 )
 
 type RedisJWTHandler struct {
-	client            redis.Cmdable
-	signingMethod     jwt.SigningMethod
-	jwtExpiration     time.Duration
-	refreshExpiration time.Duration
-	jwtKey            []byte
-	refreshKey        []byte
+	client        redis.Cmdable
+	signingMethod jwt.SigningMethod
+	jwtExpiration time.Duration
+	jwtKey        []byte
 }
 
-func NewRedisJWTHandler(client redis.Cmdable, jwtKey []byte, refreshKey []byte, jwtExpiration, refreshExpiration time.Duration) Handler {
+func NewRedisJWTHandler(client redis.Cmdable, jwtKey []byte, jwtExpiration time.Duration) Handler {
 	return &RedisJWTHandler{
-		client:            client,
-		signingMethod:     jwt.SigningMethodHS512,
-		jwtExpiration:     jwtExpiration,
-		refreshExpiration: refreshExpiration,
-		jwtKey:            jwtKey,
-		refreshKey:        refreshKey,
+		client:        client,
+		signingMethod: jwt.SigningMethodHS512,
+		jwtExpiration: jwtExpiration,
+		jwtKey:        jwtKey,
 	}
 }
 
@@ -57,7 +53,7 @@ func (h *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
 	ctx.Header(constants.HeaderLoginTokenKey, "")
 	ctx.Header(constants.HeaderRefreshTokenKey, "")
 	uc := ctx.MustGet(constants.ContextUserClaimsKey).(UserClaims)
-	return h.client.Set(ctx, fmt.Sprintf(ssidKey, uc.Ssid), "", h.refreshExpiration).Err()
+	return h.client.Set(ctx, fmt.Sprintf(ssidKey, uc.Ssid), "", h.jwtExpiration).Err()
 }
 
 func (h *RedisJWTHandler) SetLoginToken(ctx *gin.Context, UserId uint64) error {
@@ -89,6 +85,10 @@ func (h *RedisJWTHandler) SetJWTToken(ctx *gin.Context, UserId uint64, ssid stri
 	ver, err := h.GetUserTokenVersion(ctx, UserId)
 	if err != nil {
 		return fmt.Errorf("SetJWTToken failed: %w", err)
+	}
+	ver += 1
+	if err = h.client.Set(ctx, fmt.Sprintf(userTokenVersionKey, UserId), ver, h.jwtExpiration).Err(); err != nil {
+		return fmt.Errorf("SetJWTToken failed: Set UserTokenVersion failed: %w", err)
 	}
 	uc := UserClaims{
 		UserId:       UserId,
