@@ -73,6 +73,17 @@ func (m *JWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
+		ver, err := m.GetUserTokenVersion(ctx, uc.UserId)
+		if err != nil {
+			m.log.ErrorContext(ctx, "CheckLogin failed", logger.Error(err))
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		if uc.TokenVersion != ver {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		ctx.Set(constants.ContextUserClaimsKey, uc)
 		ctx.Next()
 	}

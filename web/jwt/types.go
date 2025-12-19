@@ -11,21 +11,16 @@ type Handler interface {
 	SetLoginToken(ctx *gin.Context, uid uint64) error
 	SetJWTToken(ctx *gin.Context, uid uint64, ssid string) error
 	CheckSession(ctx *gin.Context, ssid string) error
+	GetUserTokenVersion(ctx *gin.Context, uid uint64) (int64, error)
 
 	JwtKey() []byte
-	RefreshKey() []byte
 	GetUserClaims(ctx *gin.Context) (*UserClaims, error)
-}
-
-type RefreshClaims struct {
-	jwt.RegisteredClaims
-	UserId uint64
-	Ssid   string
 }
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	UserId    uint64
-	Ssid      string
-	UserAgent string
+	UserId       uint64
+	Ssid         string
+	UserAgent    string
+	TokenVersion int64
 }

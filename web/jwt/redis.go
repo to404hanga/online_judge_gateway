@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,7 +15,10 @@ import (
 	constants "github.com/to404hanga/online_judge_gateway/constant"
 )
 
-var ssidKey = "users:ssid:%s"
+var (
+	ssidKey             = "users:ssid:%s"
+	userTokenVersionKey = "users:token_version:%d"
+)
 
 type RedisJWTHandler struct {
 	client            redis.Cmdable
@@ -58,9 +62,6 @@ func (h *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
 
 func (h *RedisJWTHandler) SetLoginToken(ctx *gin.Context, UserId uint64) error {
 	ssid := uuid.New().String()
-	if err := h.SetRefreshToken(ctx, UserId, ssid); err != nil {
-		return err
-	}
 	return h.SetJWTToken(ctx, UserId, ssid)
 }
 
@@ -85,10 +86,15 @@ func (h *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
 }
 
 func (h *RedisJWTHandler) SetJWTToken(ctx *gin.Context, UserId uint64, ssid string) error {
+	ver, err := h.GetUserTokenVersion(ctx, UserId)
+	if err != nil {
+		return fmt.Errorf("SetJWTToken failed: %w", err)
+	}
 	uc := UserClaims{
-		UserId:    UserId,
-		Ssid:      ssid,
-		UserAgent: ctx.GetHeader("User-Agent"),
+		UserId:       UserId,
+		Ssid:         ssid,
+		UserAgent:    ctx.GetHeader("User-Agent"),
+		TokenVersion: ver,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.jwtExpiration)),
 		},
@@ -96,7 +102,7 @@ func (h *RedisJWTHandler) SetJWTToken(ctx *gin.Context, UserId uint64, ssid stri
 	token := jwt.NewWithClaims(h.signingMethod, uc)
 	tokenStr, err := token.SignedString(h.jwtKey)
 	if err != nil {
-		return err
+		return fmt.Errorf("SetJWTToken failed: %w", err)
 	}
 
 	// 设置响应头
@@ -116,49 +122,33 @@ func (h *RedisJWTHandler) SetJWTToken(ctx *gin.Context, UserId uint64, ssid stri
 	return nil
 }
 
-func (h *RedisJWTHandler) SetRefreshToken(ctx *gin.Context, UserId uint64, ssid string) error {
-	rc := RefreshClaims{
-		UserId: UserId,
-		Ssid:   ssid,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.refreshExpiration)), // 7 天过期
-		},
-	}
-	token := jwt.NewWithClaims(h.signingMethod, rc)
-	tokenStr, err := token.SignedString(h.refreshKey)
-	if err != nil {
-		return err
-	}
-	ctx.Header(constants.HeaderRefreshTokenKey, tokenStr)
-	// 同时设置Cookie，支持浏览器自动携带
-	ctx.SetCookie(
-		constants.HeaderRefreshTokenKey,    // cookie名称
-		tokenStr,                           // cookie 值
-		int(h.refreshExpiration.Seconds()), // 过期时间（秒）
-		"/",                                // 路径
-		"",                                 // 域名
-		false,                              // secure (HTTPS)
-		true,                               // httpOnly
-	)
-	return nil
-}
-
 func (h *RedisJWTHandler) JwtKey() []byte {
 	return h.jwtKey
 }
 
-func (h *RedisJWTHandler) RefreshKey() []byte {
-	return h.refreshKey
+func (h *RedisJWTHandler) GetUserTokenVersion(ctx *gin.Context, uid uint64) (int64, error) {
+	val, err := h.client.Get(ctx, fmt.Sprintf(userTokenVersionKey, uid)).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("GetUserTokenVersion failed: %w", err)
+	}
+	ver, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("GetUserTokenVersion failed: %w", err)
+	}
+	return ver, nil
 }
 
 func (h *RedisJWTHandler) GetUserClaims(ctx *gin.Context) (*UserClaims, error) {
 	ucAny, exists := ctx.Get(constants.ContextUserClaimsKey)
 	if !exists {
-		return nil, fmt.Errorf("user claims not found in context")
+		return nil, fmt.Errorf("GetUserClaims failed: user claims not found in context")
 	}
 	uc, ok := ucAny.(UserClaims)
 	if !ok {
-		return nil, fmt.Errorf("user claims type assertion error")
+		return nil, fmt.Errorf("GetUserClaims failed: user claims type assertion error")
 	}
 	return &uc, nil
 }
