@@ -73,6 +73,10 @@ gin:
         - "DisableUsersInCompetition" # 禁止比赛名单中的用户参赛
         - "DeleteUser" # 删除用户
         - "UpdateUser" # 更新用户
+        - "CreateUser" # 创建用户
+        - "ResetUserPassword" # 重置用户密码
+        - "UpdateUserPassword" # 更新用户密码
+        - "GetCompetitionUserList" # 获取比赛用户列表
 
         - "InitRanking" # 初始化比赛排名
   addr: ":8080"
