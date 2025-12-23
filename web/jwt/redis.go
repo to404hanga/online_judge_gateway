@@ -51,7 +51,6 @@ func (h *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) error {
 
 func (h *RedisJWTHandler) ClearToken(ctx *gin.Context) error {
 	ctx.Header(constants.HeaderLoginTokenKey, "")
-	ctx.Header(constants.HeaderRefreshTokenKey, "")
 	uc := ctx.MustGet(constants.ContextUserClaimsKey).(UserClaims)
 	return h.client.Set(ctx, fmt.Sprintf(ssidKey, uc.Ssid), "", h.jwtExpiration).Err()
 }
