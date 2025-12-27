@@ -46,6 +46,8 @@ gin:
       method: "POST"
     - path: "/health"
       method: "GET"
+    - path: "/metrics"
+      method: "GET"
   adminCheckPairs:
     - path: "/api"
       method: "ANY"
