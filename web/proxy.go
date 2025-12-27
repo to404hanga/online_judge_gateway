@@ -6,9 +6,11 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
 	constants "github.com/to404hanga/online_judge_gateway/constant"
 	"github.com/to404hanga/online_judge_gateway/web/jwt"
 	"github.com/to404hanga/online_judge_gateway/web/middleware"
@@ -23,6 +25,35 @@ type ProxyHandler struct {
 
 var _ Handler = (*ProxyHandler)(nil)
 
+var (
+	proxyRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "online_judge_gateway",
+			Subsystem: "proxy",
+			Name:      "requests_total",
+			Help:      "Proxy requests total.",
+		},
+		[]string{"service", "path", "method", "code", "reason"},
+	)
+	proxyDurationSeconds = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "online_judge_gateway",
+			Subsystem: "proxy",
+			Name:      "duration_seconds",
+			Help:      "Proxy request duration in seconds.",
+			Buckets:   prometheus.DefBuckets,
+		},
+		[]string{"service", "path", "method", "code", "reason"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(
+		proxyRequestsTotal,
+		proxyDurationSeconds,
+	)
+}
+
 func NewProxyHandler(log loggerv2.Logger, services map[string]string) *ProxyHandler {
 	return &ProxyHandler{
 		services: services,
@@ -36,9 +67,20 @@ func (h *ProxyHandler) Register(r *gin.Engine) {
 
 func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 	path := c.Param("path")
+	service := strings.TrimPrefix(path, "/")
+	pathLabel := "unknown"
+	method := c.Request.Method
+	start := time.Now()
+	reason := "ok"
+	defer func() {
+		codeLabel := strconv.Itoa(c.Writer.Status())
+		proxyRequestsTotal.WithLabelValues(service, pathLabel, method, codeLabel, reason).Inc()
+		proxyDurationSeconds.WithLabelValues(service, pathLabel, method, codeLabel, reason).Observe(time.Since(start).Seconds())
+	}()
 
 	ucAny, exists := c.Get(constants.ContextUserClaimsKey)
 	if !exists {
+		reason = "claims_not_found"
 		h.log.ErrorContext(c, "user claims not found in context",
 			logger.String("service_path", path),
 		)
@@ -47,6 +89,7 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 	}
 	uc, ok := ucAny.(jwt.UserClaims)
 	if !ok {
+		reason = "claims_type_assertion_error"
 		h.log.ErrorContext(c, "user claims type assertion error",
 			logger.String("service_path", path),
 		)
@@ -57,6 +100,7 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 	path = strings.TrimPrefix(path, "/")
 	target := "http://" + h.services[path]
 	if len(target) == 0 {
+		reason = "service_not_found"
 		h.log.ErrorContext(c, "service not found",
 			logger.String("service_path", path),
 		)
@@ -65,6 +109,7 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 	}
 	targetURL, err := url.Parse(target)
 	if err != nil {
+		reason = "parse_target_url_error"
 		h.log.ErrorContext(c, "parse target url error",
 			logger.String("service_path", path),
 			logger.String("target", target),
@@ -85,6 +130,7 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 		query := req.URL.Query()
 		cmd := query.Get(constants.ProxyKey)
 		if len(cmd) != 0 {
+			pathLabel = cmd
 			// 重写请求路径为 cmd 值
 			req.URL.Path = "/" + cmd
 
@@ -92,6 +138,8 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 			query.Del(constants.ProxyKey)
 			req.URL.RawQuery = query.Encode()
 		} else {
+			pathLabel = "missing_cmd"
+			reason = "missing_cmd"
 			h.log.ErrorContext(req.Context(), "request missing cmd parameter",
 				logger.String("service_path", path),
 			)
@@ -110,6 +158,7 @@ func (h *ProxyHandler) ProxyHandler(c *gin.Context) {
 
 	// 错误处理
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		reason = "backend_service_error"
 		h.log.ErrorContext(r.Context(), "proxy error",
 			logger.String("target", target),
 			logger.Error(err),

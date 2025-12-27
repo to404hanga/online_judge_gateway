@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"github.com/to404hanga/online_judge_gateway/config"
 	"github.com/to404hanga/online_judge_gateway/web"
@@ -32,6 +33,7 @@ func InitGinServer(l loggerv2.Logger, jwtHandler jwt.Handler, db *gorm.DB, cache
 	jwtBuilder := middleware.NewJWTMiddlewareBuilder(jwtHandler, db, cache, cfg.LoginCheckPassPairs, cfg.AdminCheckPairs, l)
 
 	engine := gin.Default()
+	engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	engine.Use(
 		corsBuilder.Build(),
 		jwtBuilder.CheckLogin(),
