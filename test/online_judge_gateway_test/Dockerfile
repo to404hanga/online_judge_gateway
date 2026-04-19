@@ -11,9 +11,11 @@ RUN apk add --no-cache git
 # 由于这是一个简单的测试程序，我们先复制 main.go
 COPY main.go .
 
-# 初始化 Go 模块（如果不存在 go.mod）
-RUN go mod init online_judge_gateway_test || true
+# 复制 go.mod 和 go.sum 文件
+COPY go.mod go.sum ./
 
+# 设置Go代理（使用国内镜像源）
+ENV GOPROXY=https://goproxy.cn,direct
 # 下载依赖
 RUN go mod tidy
 
